@@ -55,6 +55,10 @@ sub new {
 	my ($a_prev, $b_prev);
 	for my $key (sort keys %{$args{intervals}}) {
 		my ($a, $b) = ($key, $args{intervals}->{$key});
+
+		die "Undefined values not allowed in intervals.\n"
+			unless defined $a && defined $b;
+
 		# Push the ranges in ascending order
 		($a, $b) = $a < $b ? ($a, $b) : ($b, $a);
 		$b = $args{inclusive} && $args{integer} ? $b + 1 : $b;

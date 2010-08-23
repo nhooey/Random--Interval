@@ -8,15 +8,33 @@
 use Try::Tiny;
 use Data::Dumper;
 
-my %invalid_intervals = (
-	{    -5 => -3, -7 => 2  } => "Overlapping intervals specified.\n",
-	{     0 =>  5,  2 => 6  } => "Overlapping intervals specified.\n",
-	{     2 =>  6,  0 => 5  } => "Overlapping intervals specified.\n",
-	{   -10 => 17,  6 => 12 } => "Overlapping intervals specified.\n",
-	{ undef =>  4,  5 => 7  } => "Overlapping intervals specified.\n",
+use strict;
+use warnings;
+
+my @invalid_intervals = (
+	{
+		interval => { -5 => -3, -7 => 2 },
+		expected => "Overlapping intervals specified.\n",
+	},
+	{
+		interval => { 0 => 5, 2 => 6 },
+		expected => "Overlapping intervals specified.\n",
+	},
+	{
+		interval => { 2 => 6, 0 => 5 },
+		expected => "Overlapping intervals specified.\n",
+	},
+	{
+		interval => { -10 => 17, 6 => 12 },
+		expected => "Overlapping intervals specified.\n",
+	},
+	{
+		interval => { 4 => undef, 5 => 7 },
+		expected => "Undefined values not allowed in intervals.\n",
+	},
 );
 
-use Test::More tests => 2 + scalar(keys(%invalid_intervals));
+use Test::More tests => 6;
 BEGIN { use_ok('Random::Interval') };
 
 #########################
@@ -24,16 +42,13 @@ BEGIN { use_ok('Random::Interval') };
 # Insert your test code below, the Test::More module is use()ed here so read
 # its man page ( perldoc Test::More ) for help writing this test script.
 
-while (my ($interval, $expected) = each %invalid_intervals) {
+for my $test (@invalid_intervals) {
 	my $exception;
 	try {
-		my $rand_invalid = Random::Interval->new( intervals => $interval );
+		my $rand_invalid = Random::Interval->new( intervals => $test->{interval} );
 	} catch {
 		$exception = $_;
 	};
-	chomp $expected;
-	ok defined $exception && $exception eq $expected,
-	   sprintf('Invalid interval detected, expected "%s"', $expected);
+	ok defined $exception && $exception eq $test->{expected},
+	   sprintf('Invalid interval detected, expected "%s"', $test->{expected});
 }
-
-ok(defined $rand, "Class instance defined");
