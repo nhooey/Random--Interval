@@ -113,54 +113,75 @@ sub _get_rand_max {
 	return $rand_max;
 }
 
-
-# Preloaded methods go here.
-
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
 
 =head1 NAME
 
-Random::Interval - Perl extension for blah blah blah
+Random::Interval - A module that, given a set of intervals, will return a random
+number in one of those intervals, reasonably distributed as much as the built-in
+Perl function rand() is.
 
 =head1 SYNOPSIS
 
   use Random::Interval;
-  blah blah blah
+  my $ri = Random::Interval->new(
+    intervals => [
+	  [  -5,    -3 ],
+	  [  -1,     7 ],
+	  [ 8.5, 17.33 ],
+	],
+	inclusive => 0,
+	integer   => 0,
+  );
+
+  # Could very well print:    -5, -2.23423, 0, 6.2
+  # Will certainly not print: -3, 7, 17.33, or anything out of those ranges
+  printf "%s\n", $ri->rand();
+
+  my $ri2 = Random::Interval->new(
+    intervals => [
+	  [  -5,    -3 ],
+	  [  -1,     7 ],
+	],
+	inclusive => 1,
+	integer   => 1,
+  );
+
+  # Could very well print:    -5, -2, -3, 0, -1, 4, 7
+  # Will certainly not print: anything out of those ranges, or any non-integer
+  printf "%s\n", $ri2->rand();
 
 =head1 DESCRIPTION
 
-Stub documentation for Random::Interval, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
+This module is useful for obtaining a random unicode character, given a set of
+ranges, which would usually be characters in a series of languages.
 
-Blah blah blah.
+You could also use it if you're too lazy to do the math for a random number
+greater than x, but less than y, the trivial case of one interval. It might make
+your code look nicer without the offsets.
 
 =head2 EXPORT
 
-None by default.
-
-
+new()
+rand()
 
 =head1 SEE ALSO
 
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
+See the rand() function in the Perl function documentation, as this function is
+used to generate the random numbers. Also see rand() and perlsec to see how
+vulnerable this module might be to security threats to do with uneven
+distribution of random numbers.
 
-If you have a mailing list set up for your module, mention it here.
-
-If you have a web site set up for your module, mention it here.
+No website yet.
 
 =head1 AUTHOR
 
-A. U. Thor, E<lt>neil@localdomainE<gt>
+Neil Hooey <lt>neil@shutterstock.com<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2010 by A. U. Thor
+Copyright (C) 2010 Shutterstock Images LLC
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.8 or,
