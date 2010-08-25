@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use Params::Validate qw(:all);
-use POSIX qw(ceil);
+use POSIX qw(floor);
 
 require Exporter;
 
@@ -39,7 +39,7 @@ sub new {
 
 	validate(@_, {
 		intervals => {
-			type     => HASHREF,
+			type     => ARRAYREF,
 			optional => 0,
 		},
 		integer   => 0,
@@ -51,10 +51,8 @@ sub new {
 	});
 
 	# Sort each pair of interval boundaries per interval
-	my %intervals;
-	my ($a_prev, $b_prev);
-	for my $key (sort keys %{$args{intervals}}) {
-		my ($a, $b) = ($key, $args{intervals}->{$key});
+	for my $int (@{$args{intervals}}) {
+		my ($a, $b) = ($int->[0], $int->[1]);
 
 		die "Undefined values not allowed in intervals.\n"
 			unless defined $a && defined $b;
@@ -63,16 +61,22 @@ sub new {
 		($a, $b) = $a < $b ? ($a, $b) : ($b, $a);
 		$b = $args{inclusive} && $args{integer} ? $b + 1 : $b;
 
-		die "Overlapping intervals specified.\n"
-			if defined $b_prev && $b_prev > $a;
-
-		$intervals{$a} = $b;
-		($a_prev, $b_prev) = ($a, $b);
+		$int->[0] = $a;
+		$int->[1] = $b;
 	}
-	$args{intervals} = \%intervals;
 
-	my $self = bless \%args, $class;
-	return $self;
+	my @intervals = sort { $a->[0] <=> $b->[0] } @{$args{intervals}};
+	$args{intervals} = \@intervals;
+
+	my ($a_prev, $b_prev);
+	for my $int (@{$args{intervals}}) {
+		die "Overlapping intervals specified: $b_prev > $int->[0]\n"
+			if defined $b_prev && $b_prev > $int->[0];
+
+		($a_prev, $b_prev) = ($int->[0], $int->[1]);
+	}
+
+	return bless \%args, $class;
 }
 
 sub rand {
@@ -84,16 +88,17 @@ sub rand {
 	});
 
 	my $rand_max = 0;
-	while (my ($a, $b) = each %{$self->{intervals}}) {
-		$rand_max += abs($b - $a);
+	for my $int (@{$self->{intervals}}) {
+		$rand_max += abs($int->[1] - $int->[0]);
 	}
 	my $rand_rel = defined $args{rand} ? $args{rand} : rand($rand_max);
 
 	my $rand_cum = 0;
-	while (my ($a, $b) = each %{$self->{intervals}}) {
+	for my $int (@{$self->{intervals}}) {
+		my ($a, $b) = ($int->[0], $int->[1]);
 		my $in = $self->{inclusive} ? $rand_rel < $b - $a + $rand_cum : $rand_rel <= $b - $a + $rand_cum;
 		my $result = $a + $rand_rel - $rand_cum;
-		return ($self->{integer} ? int $result : $result) if $in;
+		return ($self->{integer} ? floor $result : $result) if $in;
 		$rand_cum += $b - $a;
 	}
 }
@@ -102,8 +107,8 @@ sub _get_rand_max {
 	my $self = shift;
 
 	my $rand_max = 0;
-	while (my ($a, $b) = each %{$self->{intervals}}) {
-		$rand_max += abs($b - $a);
+	for my $int (@{$self->{intervals}}) {
+		$rand_max += abs($int->[1] - $int->[0]);
 	}
 	return $rand_max;
 }
